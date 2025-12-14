@@ -40,7 +40,6 @@ export interface CustomRankRow{
 }
 
 // Product rank per customer
-
 export interface ProductRankRow{
   category: string;
   product_id: number;

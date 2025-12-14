@@ -1,6 +1,8 @@
 import { db, connectDb } from "../db/db";
 import { RowDataPacket } from "mysql2/promise";
-import { CustomRankRow, ProductRankRow } from "../db/db_type";
+import {CustomerRevenueRank} from "../db/domain_types"
+import { CustomRankRow, ProductRankRow, CustomerRevenueRankDb } from "../db/db_type";
+import { mapCustomerRevenueRank } from "../mappers/mappers";
 
 /**
  * Rank customers by total number of orders.
@@ -26,6 +28,12 @@ export async function rankCustomerByORders(): Promise<CustomRankRow[]> {
   );
   return rows as CustomRankRow[];
 }
+
+/*
+  Repository query:
+  - Ranks products by total quantity sold
+  - Ranking is reset per category using PARTITION BY
+*/
 
 export async function rankProductsByCategory(): Promise<ProductRankRow[]> {
   await connectDb();
@@ -54,4 +62,43 @@ export async function rankProductsByCategory(): Promise<ProductRankRow[]> {
             `
   );
   return rows as ProductRankRow[];
+}
+
+/*
+  Repository function:
+  - Calculates total revenue per customer
+  - Ranks customers by revenue within each country
+  - Uses window function RANK()
+*/
+
+export async function getCustomerRevenueRank(): Promise<CustomerRevenueRank[]> {
+  await connectDb();
+  const [rows] = await db.query<CustomerRevenueRankDb[] & RowDataPacket[]>(
+    `
+      WITH customer_revenue AS (
+        SELECT
+          c.customer_id,
+          c.name AS customer_name,
+          c.country,
+          SUM(p.price * oi.quantity) AS total_revenue
+        FROM customers c
+        JOIN orders o ON c.customer_id = o.customer_id
+        JOIN order_items oi ON o.order_id = oi.order_id
+        JOIN products p ON oi.product_id = p.product_id
+        GROUP BY c.customer_id, c.name, c.country
+      )
+      SELECT
+        customer_id,
+        customer_name,
+        country,
+        total_revenue,
+        RANK() OVER (
+          PARTITION BY country
+          ORDER BY total_revenue DESC
+        ) AS revenue_rank_in_country
+      FROM customer_revenue;
+    `
+  );
+
+  return rows.map(mapCustomerRevenueRank);
 }

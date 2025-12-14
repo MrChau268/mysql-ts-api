@@ -4,6 +4,7 @@ import {
   OrderRow,
   OrderItemRow,
   UserEventRow,
+  CustomerRevenueRankDb
 } from "../db/db_type";
 import {
   Customer,
@@ -11,6 +12,7 @@ import {
   Order,
   OrderItem,
   UserEvent,
+  CustomerRevenueRank
 } from "../db/domain_types";
 export function mapCustomer(row: CustomerRow): Customer {
   return { ...row, signup_date: new Date(row.signup_date) };
@@ -31,3 +33,14 @@ export function mapOrderItem(row: OrderItemRow): OrderItem {
 export function mapUserEvent(row: UserEventRow): UserEvent {
   return { ...row, event_time: new Date(row.event_time) };
 }
+
+export function mapCustomerRevenueRank(
+  row: CustomerRevenueRankDb
+): CustomerRevenueRank {
+  return {
+    customerId: row.customer_id,
+    customerName: row.customer_name,
+    country: row.country,
+    totalRevenue: row.total_revenue,
+    revenueRank: row.revenue_rank_in_country,
+  };

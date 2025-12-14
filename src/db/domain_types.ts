@@ -30,3 +30,11 @@ export interface UserEvent {
   event_type: string;
   event_time: Date;
 }
+
+export interface CustomerRevenueRank {
+  customerId: number;
+  customerName: string;
+  country: string;
+  totalRevenue: number;
+  revenueRank: number;
+}
